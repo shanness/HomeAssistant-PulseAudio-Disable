@@ -29,6 +29,7 @@
 #    v1.1  - Changed hassio_audio logging from verbose to error-only.
 #    v1.2  - Fixed bug in Docker exec commands, expanded error checking.
 #    v1.3  - Added boolean settings to enable/disable (1) change run params (2) load PA module, (3) set null devices as defaults (sink and input)
+#    v1.4  - Added boolean settings to disable bluetooth module
 #
 ###############################################################################
 me=`basename "$0"`
@@ -40,6 +41,7 @@ event_format="Container={{.Actor.Attributes.name}} Status={{.Status}}"
 DO_CHANGE_PARAMS=true
 DO_LOAD_MODULE=true
 DO_SET_NULL_AS_DEFAULT=true
+DO_UNLOAD_BLUETOOTH_MODULE=true
 
 #------------------------------------------------------------------------------
 # Function to change parameters and load PulseAudio module
@@ -81,6 +83,12 @@ function change_pulseaudio () {
         #docker exec -i hassio_audio pactl set-default-sink alsa_output.pci-0000_07_00.1.hdmi-stereo-extra2
         docker exec -i hassio_audio pactl set-default-sink null
         docker exec -i hassio_audio pactl set-default-source null.monitor
+        set +x
+    fi
+    if [[ $DO_UNLOAD_BLUETOOTH_MODULE = true ]]; then
+        set -x
+        logger -p user.notice  "${1}: PulseAudio unloading bluetooth module"
+        docker exec -i hassio_audio pactl unload-module module-bluetooth-discover
         set +x
     fi
 
